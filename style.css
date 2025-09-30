@@ -1,20 +1,17 @@
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
 body {
+  margin: 0;
+  padding: 0;
   height: 100vh;
 }
 
 p {
   width: fit-content;
   background-color: lightgray;
-}
 
-
-.centered {
   position: absolute;
   left: 50%;
   top: 50%;
