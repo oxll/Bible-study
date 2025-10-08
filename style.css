@@ -6,9 +6,37 @@ body {
   margin: 0;
   padding: 0;
   height: 100vh;
+  background-color: lightyellow;
 }
 
-p {
+#typingArea {
   width: fit-content;
-  background-color: lightgray;
+  text-align: center;
+  font: 24px "Segoe UI", sans-serif;
+  line-height: 2;
+  white-space: pre-wrap;
+}
+
+.fixed {
+  color: black;
+}
+
+.untyped,
+.hint {
+  text-decoration: black underline;
+  text-underline-offset: 2px;
+}
+
+.untyped {
+  color: transparent;
+  text-decoration-skip-ink: none;
+}
+
+.hint {
+  color: lightgray;
+  text-decoration-skip-ink: auto;
+}
+
+.hidden {
+  display: none;
 }

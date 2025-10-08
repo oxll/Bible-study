@@ -1,59 +1,109 @@
+/** TODO: barely different process for reference, split words differently:
+ * 1 Corinthians 13:4-7 is 3 'words': "1 Corinthians", "13", "4-7"
+ * (only need type 4 7)
+ * 
+ *^^^ fix the above by loading in verses: get book, chapter, and verse(s)
+ * directly from file
+ * 
+ */
+
 import {
-  setPosition,
   equalsIgnoreCase,
-  replaceCharAt,
+  getFirstIndex,
+  getNextIndex,
+  setPosition,
 } from "./utils/_index.js";
 
 const verse =
-  "4 Love is patient, love is kind. " +
-  "It does not envy, it does not boast, " +
-  "it is not proud. 5 It does not dishonor others, " +
+  "⁴ Love is patient, love is kind. It does not envy, " +
+  "it does not boast, it is not proud. " +
+  "⁵ It does not dishonor others, " +
   "it is not self-seeking, it is not easily angered, " +
   "it keeps no record of wrongs. " +
-  "6 Love does not delight in evil but " +
+  "⁶ Love does not delight in evil but " +
   "rejoices with the truth. " +
-  "7 It always protects, always trusts, " +
-  "always hopes, always perseveres.";
+  "⁷ It always protects, always trusts, " +
+  "always hopes, always perseveres.\n\n" +
+  "1 Corinthians 13:4-7";
 
 const words = verse.split(" ");
+let numWords = getFirstIndex(words, isTypable) + 1;
 
-const p = document.createElement("p");
-setPosition(p, 50, 50);
-document.body.appendChild(p);
+let index = getFirstIndex(verse, isTypable);
 
-let section, index, expectedLetter;
+const typingArea = document.createElement("div");
+typingArea.id = "typingArea";
+setPosition(typingArea, 50, 50);
+document.body.appendChild(typingArea);
 
-let numWords = 0;
-updateSection();
+generateTypingArea();
 
 document.addEventListener("keydown", (event) => {
-  const key = event.key;
-
-  if (!equalsIgnoreCase(key, expectedLetter)) return;
-
-  p.textContent = replaceCharAt(p.textContent, index, expectedLetter);
-
-  index = p.textContent.indexOf("_");
-  expectedLetter = section[index];
-
-  if (index === -1) {
-    updateSection(numWords);
-  }
+  handleKeyPress(event.key);
 });
 
-function updateSection() {
-  do {
-    numWords++;
-  } while (!/[a-z]/i.test(words[numWords - 1]));
+function generateTypingArea() {
+  [...verse].forEach((char, i) => {
+    const span = document.createElement("span");
+    span.textContent = char;
 
-  section = getWords(numWords);
+    span.classList.add(isTypable(char) ? "hint" : "fixed");
 
-  p.textContent = section.replace(/[a-z]/gi, "_");
+    if (i >= getWords(numWords).length) {
+      span.classList.add("hidden");
+      span.classList.replace("hint", "untyped");
+    }
 
-  index = p.textContent.indexOf("_");
-  expectedLetter = section[index];
+    typingArea.appendChild(span);
+  });
+}
+
+function handleKeyPress(key) {
+  if (index === -1) return;
+
+  const expected = verse[index];
+  if (!equalsIgnoreCase(key, expected)) return;
+
+  const span = typingArea.children[index];
+  span.classList.replace("hint", "fixed");
+  span.classList.replace("untyped", "fixed");
+
+  index = getNextIndex(index, verse, isTypable);
+
+  if (index >= getWords(numWords).length) {
+    addNextWord();
+  }
+}
+
+function addNextWord() {
+  numWords = getNextIndex(numWords - 1, words, isTypable) + 1;
+
+  const spans = Array.from(typingArea.children);
+  const end = getWords(numWords).length;
+  const slice = spans.slice(0, end);
+
+  for (const span of slice) {
+    span.classList.remove("hint", "hidden");
+
+    const char = span.textContent;
+
+    if (!isTypable(char)) continue;
+
+    if (!span.classList.contains("fixed")) {
+      span.classList.add("hint");
+      continue;
+    }
+
+    span.classList.replace("fixed", "untyped");
+  }
+
+  index = getFirstIndex(verse, isTypable);
 }
 
 function getWords(numWords) {
   return words.slice(0, numWords).join(" ");
+}
+
+function isTypable(char) {
+  return /[a-z0-9]/i.test(char);
 }
