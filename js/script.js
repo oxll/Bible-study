@@ -1,10 +1,10 @@
 /** TODO: barely different process for reference, split words differently:
  * 1 Corinthians 13:4-7 is 3 'words': "1 Corinthians", "13", "4-7"
  * (only need type 4 7)
- * 
+ *
  *^^^ fix the above by loading in verses: get book, chapter, and verse(s)
  * directly from file
- * 
+ *
  */
 
 import {
@@ -23,13 +23,17 @@ const verse =
   "⁶ Love does not delight in evil but " +
   "rejoices with the truth. " +
   "⁷ It always protects, always trusts, " +
-  "always hopes, always perseveres.\n\n" +
-  "1 Corinthians 13:4-7";
+  "always hopes, always perseveres.";
+// + "\n\n1 Corinthians 13:4-7";
+
+let sectionStartIndex = 0;
+
+let isReviewing = false;
 
 const words = verse.split(" ");
-let numWords = getFirstIndex(words, isTypable) + 1;
+let wordCount = getFirstIndex(words, isTypable) + 1;
 
-let index = getFirstIndex(verse, isTypable);
+let cursor = getFirstIndex(verse, isTypable);
 
 const typingArea = document.createElement("div");
 typingArea.id = "typingArea";
@@ -49,59 +53,97 @@ function generateTypingArea() {
 
     span.classList.add(isTypable(char) ? "hint" : "fixed");
 
-    if (i >= getWords(numWords).length) {
-      span.classList.add("hidden");
-      span.classList.replace("hint", "untyped");
-    }
+    if (i >= getWords(wordCount).length) span.classList.add("hidden");
 
     typingArea.appendChild(span);
   });
 }
 
 function handleKeyPress(key) {
-  if (index === -1) return;
+  if (cursor === -1) return;
 
-  const expected = verse[index];
+  const expected = verse[cursor];
   if (!equalsIgnoreCase(key, expected)) return;
 
-  const span = typingArea.children[index];
+  const span = typingArea.children[cursor];
   span.classList.replace("hint", "fixed");
   span.classList.replace("untyped", "fixed");
 
-  index = getNextIndex(index, verse, isTypable);
+  let nextCursor = getNextIndex(cursor, verse, isTypable);
+  let nextSpan = typingArea.children[nextCursor];
 
-  if (index >= getWords(numWords).length) {
-    addNextWord();
+  if (!nextSpan.classList.contains("hidden")) {
+    cursor = nextCursor;
+    return;
   }
+
+  const completedSection =
+    verse[cursor + 1] === "," || verse[cursor + 1] === ".";
+  if (completedSection) {
+    if (isReviewing || sectionStartIndex === 0) {
+      isReviewing = false;
+      addNextSection();
+    } else {
+      isReviewing = true;
+      addNextWord();
+    }
+
+    return;
+  }
+
+  addNextWord();
 }
 
 function addNextWord() {
-  numWords = getNextIndex(numWords - 1, words, isTypable) + 1;
+  if (!isReviewing) {
+    wordCount = getNextIndex(wordCount - 1, words, isTypable) + 1;
+  }
 
   const spans = Array.from(typingArea.children);
-  const end = getWords(numWords).length;
-  const slice = spans.slice(0, end);
+  const start = isReviewing ? 0 : sectionStartIndex;
+  const end = getWords(wordCount).length;
+  const slice = spans.slice(start, end);
 
   for (const span of slice) {
-    span.classList.remove("hint", "hidden");
+    span.classList.remove("hidden");
 
-    const char = span.textContent;
-
-    if (!isTypable(char)) continue;
-
-    if (!span.classList.contains("fixed")) {
-      span.classList.add("hint");
-      continue;
-    }
+    if (!isTypable(span.textContent)) continue;
 
     span.classList.replace("fixed", "untyped");
   }
 
-  index = getFirstIndex(verse, isTypable);
+  cursor = getNextIndex(start - 1, verse, isTypable);
 }
 
-function getWords(numWords) {
-  return words.slice(0, numWords).join(" ");
+function addNextSection() {
+  wordCount = getNextIndex(wordCount - 1, words, isTypable) + 1;
+
+  const spans = Array.from(typingArea.children);
+  const end = getWords(wordCount).length;
+  const slice = spans.slice(0, end);
+
+  sectionStartIndex = [...typingArea.children].findIndex(
+    (span, i) =>
+      i > cursor &&
+      span.classList.contains("hidden") &&
+      span.textContent !== " "
+  );
+
+  for (const [i, span] of slice.entries()) {
+    if (isTypable(verse[i])) span.classList.replace("fixed", "untyped");
+
+    if (i < sectionStartIndex) {
+      span.classList.add("hidden");
+    } else {
+      span.classList.remove("hidden");
+    }
+  }
+
+  cursor = getNextIndex(cursor, verse, isTypable);
+}
+
+function getWords(wordCount) {
+  return words.slice(0, wordCount).join(" ");
 }
 
 function isTypable(char) {

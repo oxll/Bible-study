@@ -17,6 +17,10 @@ body {
   white-space: pre-wrap;
 }
 
+#cursor {
+  outline: 2px solid hotpink;
+}
+
 .fixed {
   color: black;
 }
@@ -28,7 +32,7 @@ body {
 }
 
 .untyped {
-  color: transparent;
+  color: palevioletred;
   text-decoration-skip-ink: none;
 }
 
@@ -38,5 +42,6 @@ body {
 }
 
 .hidden {
-  display: none;
+  background-color: palegoldenrod;
+  /* display: none; */
 }
